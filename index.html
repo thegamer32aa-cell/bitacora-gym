@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bitácora de Gym</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bitácora">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#101114">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root{
+    --bg:#101114;
+    --surface:#1a1c20;
+    --surface-2:#222429;
+    --border:#2c2f36;
+    --border-strong:#3a3e46;
+    --accent:#e8b83e;
+    --accent-dim:#8a6c1f;
+    --text:#eef0f2;
+    --text-2:#9297a1;
+    --text-3:#5c6068;
+    --green:#5fbf85;
+    --red:#e2585a;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
+  body{
+    font-family:'Inter',sans-serif;
+    padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 32px);
+    max-width:520px;margin:0 auto;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.03em;margin:0;}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:20px 0 16px;}
+  .top .brand{font-family:'Oswald',sans-serif;font-size:15px;letter-spacing:.12em;color:var(--text-2);}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--red);}
+  .status-dot.ok{background:var(--green);}
+  .status-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);font-family:'JetBrains Mono',monospace;}
+
+  .plate{
+    position:relative;width:118px;height:118px;border-radius:50%;
+    border:7px solid var(--border-strong);
+    background:radial-gradient(circle at 50% 42%, var(--surface-2) 0%, var(--surface) 70%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    margin:6px auto 18px;
+  }
+  .plate .num{font-family:'Oswald',sans-serif;font-size:38px;font-weight:700;color:var(--accent);line-height:1;}
+  .plate .of{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3);margin-top:2px;}
+
+  .barbell{display:flex;align-items:center;gap:0;margin:24px 0;}
+  .barbell .dot{width:6px;height:6px;border-radius:50%;background:var(--border-strong);flex-shrink:0;}
+  .barbell .bar{flex:1;height:1px;background:var(--border-strong);}
+
+  .session-title{text-align:center;margin-bottom:4px;}
+  .session-title h2{font-size:26px;color:var(--text);}
+  .session-sub{text-align:center;font-size:12px;color:var(--text-3);font-family:'JetBrains Mono',monospace;margin-bottom:4px;}
+  .rest-note{text-align:center;color:var(--text-2);font-size:14px;padding:24px 0;line-height:1.6;}
+
+  .day-override{display:flex;justify-content:center;margin:10px 0 0;}
+  .day-override select{
+    background:transparent;border:none;color:var(--text-3);font-size:12px;
+    font-family:'JetBrains Mono',monospace;text-align:center;
+  }
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+  .cat-label{font-size:11px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;font-weight:600;margin:4px 0 10px;font-family:'Oswald',sans-serif;}
+
+  .ex-row{border-top:1px solid var(--border);padding:12px 0;}
+  .ex-row:first-of-type{border-top:none;padding-top:0;}
+  .ex-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+  .ex-name{font-size:14px;font-weight:500;}
+  .ex-toggle{width:22px;height:22px;border-radius:7px;border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:15px;flex-shrink:0;}
+  .ex-toggle.active{background:var(--accent);border-color:var(--accent);color:#221a05;}
+
+  .sets{display:none;margin-top:12px;}
+  .sets.show{display:block;}
+  .set-grid{display:grid;grid-template-columns:28px 1fr 1fr;gap:8px;align-items:center;margin-bottom:6px;}
+  .set-grid .set-idx{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3);text-align:center;}
+  .set-grid input{
+    width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;
+    color:var(--text);font-family:'JetBrains Mono',monospace;font-size:15px;padding:9px 8px;text-align:center;
+  }
+  .set-grid input:focus{outline:none;border-color:var(--accent);}
+  .set-labels{display:grid;grid-template-columns:28px 1fr 1fr;gap:8px;margin-bottom:4px;}
+  .set-labels span{font-size:10px;color:var(--text-3);text-align:center;font-family:'JetBrains Mono',monospace;}
+
+  .custom-ex{display:flex;gap:8px;margin-top:12px;}
+  .custom-ex input{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;padding:9px 10px;}
+  .custom-ex button{background:var(--surface-2);border:1px solid var(--border-strong);border-radius:9px;color:var(--text-2);font-size:18px;width:38px;flex-shrink:0;}
+
+  label.field-label{display:block;font-size:11px;letter-spacing:.06em;color:var(--text-2);text-transform:uppercase;margin-bottom:8px;font-family:'Oswald',sans-serif;}
+  .slider-row{display:flex;align-items:center;gap:12px;}
+  input[type="range"]{-webkit-appearance:none;flex:1;height:4px;background:var(--border-strong);border-radius:2px;}
+  input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);}
+  .slider-val{font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--accent);min-width:28px;text-align:right;font-weight:600;}
+  textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:14px;padding:10px;font-family:'Inter',sans-serif;resize:vertical;min-height:64px;}
+  textarea:focus,select:focus{outline:none;}
+
+  .btn{
+    width:100%;padding:15px;border-radius:12px;border:1px solid var(--border-strong);
+    background:var(--surface-2);color:var(--text);font-size:14px;font-weight:600;
+    font-family:'Oswald',sans-serif;letter-spacing:.05em;text-transform:uppercase;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#221a05;}
+  .btn.primary:disabled{background:var(--surface-2);border-color:var(--border);color:var(--text-3);}
+  .btn-row{display:flex;flex-direction:column;gap:10px;margin-top:18px;}
+
+  .toast{
+    position:fixed;left:16px;right:16px;bottom:24px;max-width:488px;margin:0 auto;
+    background:var(--surface-2);border:1px solid var(--border-strong);border-radius:12px;
+    padding:13px 16px;font-size:13px;text-align:center;opacity:0;transition:opacity .25s;pointer-events:none;
+  }
+  .toast.show{opacity:1;}
+  .toast.ok{border-color:var(--green);color:var(--green);}
+  .toast.err{border-color:var(--red);color:var(--red);}
+
+  .setup{font-size:12px;color:var(--text-3);text-align:center;margin-top:14px;line-height:1.6;}
+  .setup a{color:var(--text-2);}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <span class="brand">Bitácora · Gym</span>
+  <div class="status-row"><span class="status-dot" id="statusDot"></span><span id="statusText">sin conectar</span></div>
+</div>
+
+<div class="plate">
+  <div class="num" id="cycleNum">1</div>
+  <div class="of">DÍA · CICLO 8</div>
+</div>
+
+<div class="session-title"><h2 id="groupTitle">Hombro</h2></div>
+<div class="session-sub" id="dateSub"></div>
+<div class="day-override">
+  <select id="dayOverride"></select>
+</div>
+
+<div class="barbell"><div class="dot"></div><div class="bar"></div><div class="dot"></div></div>
+
+<div id="restNote" class="rest-note" style="display:none">Hoy toca descanso.<br>Aun así puedes registrar sensación general o notas si quieres.</div>
+
+<div id="exerciseWrap"></div>
+
+<div class="card">
+  <label class="field-label">Sensación general</label>
+  <div class="slider-row">
+    <input type="range" id="sensacion" min="1" max="10" step="1" value="7">
+    <span class="slider-val" id="sensacionVal">7</span>
+  </div>
+</div>
+
+<div class="card">
+  <label class="field-label">Energía</label>
+  <div class="slider-row">
+    <input type="range" id="energia" min="1" max="10" step="1" value="7">
+    <span class="slider-val" id="energiaVal">7</span>
+  </div>
+</div>
+
+<div class="card">
+  <label class="field-label">Notas rápidas</label>
+  <textarea id="notas" placeholder="¿Subí peso en algo? ¿Qué noté? ¿Qué mejorar la próxima vez?"></textarea>
+</div>
+
+<div class="btn-row">
+  <button class="btn" id="btnConnect">Conectar con Google Drive</button>
+  <button class="btn primary" id="btnSave" disabled>Guardar sesión</button>
+</div>
+
+<div class="setup" id="setupNote"></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CONFIG = {
+  CLIENT_ID: "TU_CLIENT_ID_DE_GOOGLE.apps.googleusercontent.com",
+  SCOPE: "https://www.googleapis.com/auth/drive.file",
+  FOLDER_PATH: ["02 - Cuerpo", "Rutina", "Historial Gym"],
+  CYCLE_START: "2026-07-16"
+};
+
+const CYCLE = [
+  { grupo: "Hombro", tipo: "hombro" },
+  { grupo: "Bíceps + Tríceps", tipo: "biceps_triceps" },
+  { grupo: "Espalda + Hombros", tipo: "espalda_hombros" },
+  { grupo: "Descanso", tipo: "descanso" },
+  { grupo: "Pecho + Hombros", tipo: "pecho_hombros" },
+  { grupo: "Bíceps + Tríceps", tipo: "biceps_triceps" },
+  { grupo: "Pecho + Hombros", tipo: "pecho_hombros" },
+  { grupo: "Descanso", tipo: "descanso" }
+];
+
+const EXERCISES = {
+  hombro: { "": [
+    "Press militar con barra","Elevaciones laterales","Aperturas de ángel","Press Arnold",
+    "Face pull con cuerda","Pájaros en polea","Elevaciones frontales con disco"
+  ]},
+  biceps_triceps: {
+    "Bíceps": ["Curl con barra","Curl con mancuernas alternado","Curl martillo","Curl con brazo apoyado (predicador)","Curl en polea baja","Dominadas supinas","Curl inclinado en banco","Curl araña"],
+    "Tríceps": ["Press francés EZ","Press cerrado en banca","Polea con cuerda de pie","Polea con gomas de pie","Press sobre la cabeza con barra","Elevación tras nuca sentado","California press con mancuernas","Fondos en paralelas"]
+  },
+  espalda_hombros: {
+    "Espalda": ["Remo con barra","Dominadas","Remo de pie en banca (Pendlay Row)","Peso muerto","Remo en T (T-bar row)","Remo con mancuerna un brazo","Remo en banco inclinado","Pull-over con mancuerna"],
+    "Hombros": ["Press militar con barra","Elevaciones laterales","Aperturas de ángel","Face pull con cuerda","Press Arnold"]
+  },
+  pecho_hombros: {
+    "Pecho": ["Press plano con barra","Press plano con mancuernas","Press inclinado con barra","Press inclinado con mancuernas","Aperturas con mancuernas","Aperturas en cable cruzado","Elevaciones frontales con mancuerna","Fondos en paralelas"],
+    "Hombros": ["Press militar con barra","Elevaciones laterales","Aperturas de ángel","Press Arnold","Pájaros en polea (posterior)"]
+  },
+  descanso: {}
+};
+
+let state = { added: {}, tokenClient: null, accessToken: null, folderId: null, manualDay: null };
+
+function pad(n){ return n.toString().padStart(2,"0"); }
+function todayISO(){ const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function cycleDay(){
+  if(state.manualDay !== null) return state.manualDay;
+  const start = new Date(CONFIG.CYCLE_START + "T00:00:00");
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = Math.floor((today - start) / 86400000);
+  return ((diff % 8) + 8) % 8;
+}
+
+function renderHeader(){
+  const day = cycleDay();
+  const info = CYCLE[day];
+  document.getElementById("cycleNum").textContent = day + 1;
+  document.getElementById("groupTitle").textContent = info.grupo;
+  const d = new Date();
+  const dias = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+  const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  document.getElementById("dateSub").textContent = `${dias[d.getDay()]} ${d.getDate()} de ${meses[d.getMonth()]}`;
+  document.getElementById("restNote").style.display = info.tipo === "descanso" ? "block" : "none";
+  return info;
+}
+
+function renderDayOverride(){
+  const sel = document.getElementById("dayOverride");
+  sel.innerHTML = "";
+  const autoOpt = document.createElement("option");
+  autoOpt.value = "auto";
+  autoOpt.textContent = "Automático (según ciclo)";
+  sel.appendChild(autoOpt);
+  CYCLE.forEach((c, i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = `Día ${i+1} — ${c.grupo}`;
+    sel.appendChild(opt);
+  });
+  sel.value = state.manualDay === null ? "auto" : state.manualDay;
+  sel.onchange = () => {
+    state.manualDay = sel.value === "auto" ? null : parseInt(sel.value, 10);
+    state.added = {};
+    renderAll();
+  };
+}
+
+function exerciseKey(name){ return name.replace(/[^a-z0-9]/gi, "_").toLowerCase(); }
+
+function renderExercises(info){
+  const wrap = document.getElementById("exerciseWrap");
+  wrap.innerHTML = "";
+  const cats = EXERCISES[info.tipo];
+  Object.keys(cats).forEach(catName => {
+    const card = document.createElement("div");
+    card.className = "card";
+    if(catName){
+      const lbl = document.createElement("div");
+      lbl.className = "cat-label";
+      lbl.textContent = catName;
+      card.appendChild(lbl);
+    }
+    cats[catName].forEach(name => {
+      card.appendChild(buildExerciseRow(name));
+    });
+    const customRow = document.createElement("div");
+    customRow.className = "custom-ex";
+    customRow.innerHTML = `<input type="text" placeholder="Añadir ejercicio suelto" id="custom-${exerciseKey(catName||'main')}"><button type="button">+</button>`;
+    customRow.querySelector("button").onclick = () => {
+      const inp = customRow.querySelector("input");
+      if(inp.value.trim()){
+        card.insertBefore(buildExerciseRow(inp.value.trim()), customRow);
+        inp.value = "";
+      }
+    };
+    card.appendChild(customRow);
+    wrap.appendChild(card);
+  });
+}
+
+function buildExerciseRow(name){
+  const key = exerciseKey(name) + "-" + Math.random().toString(36).slice(2,7);
+  const row = document.createElement("div");
+  row.className = "ex-row";
+  row.innerHTML = `
+    <div class="ex-head">
+      <span class="ex-name">${name}</span>
+      <span class="ex-toggle">+</span>
+    </div>
+    <div class="sets">
+      <div class="set-labels"><span></span><span>KG</span><span>REPS</span></div>
+      ${[1,2,3,4].map(i => `
+      <div class="set-grid">
+        <span class="set-idx">S${i}</span>
+        <input type="number" inputmode="decimal" placeholder="0" class="peso">
+        <input type="number" inputmode="numeric" placeholder="0" class="reps">
+      </div>`).join("")}
+    </div>
+  `;
+  const head = row.querySelector(".ex-head");
+  const toggle = row.querySelector(".ex-toggle");
+  const sets = row.querySelector(".sets");
+  head.onclick = () => {
+    const active = toggle.classList.toggle("active");
+    sets.classList.toggle("show", active);
+    toggle.textContent = active ? "✓" : "+";
+    state.added[key] = active ? { name, row } : undefined;
+  };
+  row.dataset.name = name;
+  row.dataset.key = key;
+  return row;
+}
+
+function renderAll(){
+  const info = renderHeader();
+  renderDayOverride();
+  renderExercises(info);
+}
+
+document.getElementById("sensacion").oninput = e => document.getElementById("sensacionVal").textContent = e.target.value;
+document.getElementById("energia").oninput = e => document.getElementById("energiaVal").textContent = e.target.value;
+
+function showToast(msg, kind){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show " + (kind || "");
+  setTimeout(() => { t.className = "toast"; }, 3200);
+}
+
+function setConnected(on){
+  document.getElementById("statusDot").classList.toggle("ok", on);
+  document.getElementById("statusText").textContent = on ? "conectado" : "sin conectar";
+  document.getElementById("btnSave").disabled = !on;
+  document.getElementById("btnConnect").textContent = on ? "Reconectar Google Drive" : "Conectar con Google Drive";
+}
+
+function initGoogle(){
+  if(!window.google || !window.google.accounts){
+    document.getElementById("setupNote").textContent = "No se pudo cargar Google Identity Services. Revisa tu conexión.";
+    return;
+  }
+  state.tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CONFIG.CLIENT_ID,
+    scope: CONFIG.SCOPE,
+    callback: (resp) => {
+      if(resp.error){ showToast("Error al conectar: " + resp.error, "err"); return; }
+      state.accessToken = resp.access_token;
+      setConnected(true);
+      showToast("Conectado a Google Drive", "ok");
+    }
+  });
+}
+
+document.getElementById("btnConnect").onclick = () => {
+  if(CONFIG.CLIENT_ID.includes("TU_CLIENT_ID")){
+    showToast("Falta configurar el Client ID de Google", "err");
+    return;
+  }
+  if(!state.tokenClient){ initGoogle(); }
+  if(state.tokenClient) state.tokenClient.requestAccessToken();
+};
+
+async function driveFetch(url, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({ Authorization: "Bearer " + state.accessToken }, opts.headers || {});
+  const res = await fetch(url, opts);
+  if(!res.ok){ const t = await res.text(); throw new Error(t); }
+  return res.json();
+}
+
+async function findOrCreateFolder(name, parentId){
+  const q = encodeURIComponent(`name='${name.replace(/'/g,"\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false` + (parentId ? ` and '${parentId}' in parents` : " and 'root' in parents"));
+  const list = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`);
+  if(list.files && list.files.length){ return list.files[0].id; }
+  const meta = { name, mimeType: "application/vnd.google-apps.folder" };
+  if(parentId) meta.parents = [parentId];
+  const created = await driveFetch("https://www.googleapis.com/drive/v3/files", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(meta)
+  });
+  return created.id;
+}
+
+async function ensureFolderPath(){
+  if(state.folderId) return state.folderId;
+  let parent = null;
+  for(const part of CONFIG.FOLDER_PATH){
+    parent = await findOrCreateFolder(part, parent);
+  }
+  state.folderId = parent;
+  return parent;
+}
+
+function buildMarkdown(info){
+  const fecha = todayISO();
+  const d = new Date();
+  const dias = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+  const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const diaLargo = `${dias[d.getDay()]} ${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
+  const sensacion = document.getElementById("sensacion").value;
+  const energia = document.getElementById("energia").value;
+  const notas = document.getElementById("notas").value.trim();
+
+  const activeRows = Object.values(state.added).filter(Boolean);
+  let tabla = "| Ejercicio | Serie 1 | Serie 2 | Serie 3 | Serie 4 |\n|-----------|---------|---------|---------|---------|\n";
+  if(activeRows.length === 0){
+    tabla += "| — | — | — | — | — |\n";
+  } else {
+    activeRows.forEach(({ name, row }) => {
+      const pesos = [...row.querySelectorAll(".peso")].map(i => i.value);
+      const reps = [...row.querySelectorAll(".reps")].map(i => i.value);
+      const cells = pesos.map((p, i) => {
+        if(!p && !reps[i]) return "";
+        return `${p || "?"} kg × ${reps[i] || "?"}`;
+      });
+      while(cells.length < 4) cells.push("");
+      tabla += `| ${name} | ${cells[0]} | ${cells[1]} | ${cells[2]} | ${cells[3]} |\n`;
+    });
+  }
+
+  return `---
+fecha: ${fecha}
+grupo: ${info.grupo}
+día-ciclo: ${cycleDay() + 1}
+sensación: ${sensacion}
+energía: ${energia}
+tags: [gym, sesion, app]
+---
+
+# 💪 ${fecha} — ${info.grupo}
+
+**Sensación general:** ${sensacion}/10
+**Energía:** ${energia}/10
+**Notas rápidas:** ${notas || "—"}
+
+---
+
+## Ejercicios
+
+${tabla}
+---
+
+## ¿Cómo fue la sesión?
+
+**¿Subí peso en algo?**
+
+**¿Qué noté?**
+${notas || ""}
+
+**¿Qué mejorar la próxima vez?**
+`;
+}
+
+document.getElementById("btnSave").onclick = async () => {
+  const info = CYCLE[cycleDay()];
+  const btn = document.getElementById("btnSave");
+  btn.disabled = true;
+  btn.textContent = "Guardando…";
+  try{
+    const folderId = await ensureFolderPath();
+    const content = buildMarkdown(info);
+    const filename = `${todayISO()} — ${info.grupo}.md`;
+    const boundary = "gymapp" + Date.now();
+    const metadata = { name: filename, parents: [folderId], mimeType: "text/markdown" };
+    const body =
+      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n` +
+      `--${boundary}\r\nContent-Type: text/markdown\r\n\r\n${content}\r\n--${boundary}--`;
+    await driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+      method: "POST",
+      headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
+      body
+    });
+    showToast("Sesión guardada en Drive", "ok");
+    try{ localStorage.setItem("gymapp_last_save", todayISO()); }catch(e){}
+  }catch(err){
+    showToast("No se pudo guardar. Revisa la conexión.", "err");
+    console.error(err);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "Guardar sesión";
+  }
+};
+
+document.getElementById("setupNote").innerHTML =
+  CONFIG.CLIENT_ID.includes("TU_CLIENT_ID")
+    ? "Configura tu Client ID de Google en el código antes de usar la app."
+    : "";
+
+renderAll();
+window.addEventListener("load", () => setTimeout(initGoogle, 400));
+</script>
+</body>
+</html>
