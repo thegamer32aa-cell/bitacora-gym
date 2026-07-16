@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js"></script>
 <style>
   :root{
     --bg:#101114;
@@ -171,6 +172,14 @@
   <textarea id="notas" placeholder="¿Subí peso en algo? ¿Qué noté? ¿Qué mejorar la próxima vez?"></textarea>
 </div>
 
+<div class="card" id="folderCard" style="display:none">
+  <label class="field-label">Carpeta de destino en Drive</label>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+    <span id="folderName" style="font-size:13px;color:var(--text-2);">Ninguna elegida todavía</span>
+    <button class="btn" id="btnPickFolder" style="width:auto;padding:8px 14px;font-size:11px;">Elegir</button>
+  </div>
+</div>
+
 <div class="btn-row">
   <button class="btn" id="btnConnect">Conectar con Google Drive</button>
   <button class="btn primary" id="btnSave" disabled>Guardar sesión</button>
@@ -183,6 +192,7 @@
 <script>
 const CONFIG = {
   CLIENT_ID: "441287844321-aogess41472vgr7o74s9bel12ftb067q.apps.googleusercontent.com",
+  API_KEY: "AIzaSyBpEczqZdQfkvgMGll1Le8YjMgEwGDssbY",
   SCOPE: "https://www.googleapis.com/auth/drive.file",
   FOLDER_PATH: ["02 - Cuerpo", "Rutina", "Historial Gym"],
   CYCLE_START: "2026-07-16"
@@ -353,6 +363,7 @@ function setConnected(on){
   document.getElementById("statusText").textContent = on ? "conectado" : "sin conectar";
   document.getElementById("btnSave").disabled = !on;
   document.getElementById("btnConnect").textContent = on ? "Reconectar Google Drive" : "Conectar con Google Drive";
+  document.getElementById("folderCard").style.display = on ? "block" : "none";
 }
 
 function initGoogle(){
@@ -403,15 +414,45 @@ async function findOrCreateFolder(name, parentId){
   return created.id;
 }
 
-async function ensureFolderPath(){
-  if(state.folderId) return state.folderId;
-  let parent = null;
-  for(const part of CONFIG.FOLDER_PATH){
-    parent = await findOrCreateFolder(part, parent);
-  }
-  state.folderId = parent;
-  return parent;
+let pickerLoaded = false;
+function loadPicker(){
+  if(!window.gapi){ setTimeout(loadPicker, 300); return; }
+  gapi.load("picker", () => { pickerLoaded = true; });
 }
+
+function openFolderPicker(){
+  if(!state.accessToken){ showToast("Conecta Google Drive primero", "err"); return; }
+  if(!pickerLoaded){ showToast("Cargando selector, espera un segundo…", "err"); loadPicker(); return; }
+  const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+    .setSelectFolderEnabled(true)
+    .setIncludeFolders(true);
+  const picker = new google.picker.PickerBuilder()
+    .addView(view)
+    .setOAuthToken(state.accessToken)
+    .setDeveloperKey(CONFIG.API_KEY)
+    .setCallback(onFolderPicked)
+    .build();
+  picker.setVisible(true);
+}
+
+function onFolderPicked(data){
+  if(data.action !== google.picker.Action.PICKED) return;
+  const doc = data.docs[0];
+  state.folderId = doc.id;
+  try{ localStorage.setItem("gymapp_folder_id", doc.id); localStorage.setItem("gymapp_folder_name", doc.name); }catch(e){}
+  document.getElementById("folderName").textContent = doc.name;
+  showToast("Carpeta seleccionada: " + doc.name, "ok");
+}
+
+function restoreFolderChoice(){
+  try{
+    const id = localStorage.getItem("gymapp_folder_id");
+    const name = localStorage.getItem("gymapp_folder_name");
+    if(id){ state.folderId = id; document.getElementById("folderName").textContent = name || "Carpeta guardada"; }
+  }catch(e){}
+}
+
+document.getElementById("btnPickFolder").onclick = openFolderPicker;
 
 function buildMarkdown(info){
   const fecha = todayISO();
@@ -474,12 +515,17 @@ ${notas || ""}
 }
 
 document.getElementById("btnSave").onclick = async () => {
+  if(!state.folderId){
+    showToast("Elige primero la carpeta de destino", "err");
+    openFolderPicker();
+    return;
+  }
   const info = CYCLE[cycleDay()];
   const btn = document.getElementById("btnSave");
   btn.disabled = true;
   btn.textContent = "Guardando…";
   try{
-    const folderId = await ensureFolderPath();
+    const folderId = state.folderId;
     const content = buildMarkdown(info);
     const filename = `${todayISO()} — ${info.grupo}.md`;
     const boundary = "gymapp" + Date.now();
@@ -509,7 +555,11 @@ document.getElementById("setupNote").innerHTML =
     : "";
 
 renderAll();
-window.addEventListener("load", () => setTimeout(initGoogle, 400));
+restoreFolderChoice();
+window.addEventListener("load", () => {
+  setTimeout(initGoogle, 400);
+  setTimeout(loadPicker, 400);
+});
 </script>
 </body>
 </html>
