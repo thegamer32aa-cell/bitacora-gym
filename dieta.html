@@ -1,87 +1,555 @@
-:root{
-  --bg:#101114;
-  --surface:#1a1c20;
-  --surface-2:#222429;
-  --border:#2c2f36;
-  --border-strong:#3a3e46;
-  --accent:#e8b83e;
-  --accent-dim:#8a6c1f;
-  --text:#eef0f2;
-  --text-2:#9297a1;
-  --text-3:#5c6068;
-  --green:#5fbf85;
-  --red:#e2585a;
-  --radius:14px;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi Dieta</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dieta">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#101114">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/styles.css">
+<style>
+  .phase-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.06em;font-weight:600;}
+  .phase-def{background:rgba(95,191,133,.15);color:var(--green);border:1px solid var(--green);}
+  .phase-mant{background:rgba(232,184,62,.15);color:var(--accent);border:1px solid var(--accent);}
+  .phase-vol{background:rgba(226,88,90,.15);color:var(--red);border:1px solid var(--red);}
+
+  .diet-tags{font-size:11px;color:var(--text-3);text-align:center;margin:2px 0 20px;line-height:1.6;}
+
+  .today-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .today-date{font-family:'Oswald',sans-serif;font-size:15px;text-transform:capitalize;}
+  .today-kcal{font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:17px;font-weight:600;}
+  .meal-row{padding:11px 0;border-bottom:1px solid var(--border);}
+  .meal-row:last-child{border-bottom:none;padding-bottom:0;}
+  .meal-top{display:flex;justify-content:space-between;align-items:baseline;}
+  .meal-label{font-size:10.5px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;font-family:'Oswald',sans-serif;}
+  .meal-name{font-size:14.5px;color:var(--text);margin-top:3px;font-weight:500;}
+  .meal-kcal{font-family:'JetBrains Mono',monospace;color:var(--text-2);font-size:12.5px;white-space:nowrap;}
+  .meal-empty{font-size:13px;color:var(--text-3);text-align:center;padding:8px 0;}
+
+  .macro-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .macro-table th,.macro-table td{padding:8px 4px;text-align:center;border-bottom:1px solid var(--border);}
+  .macro-table th:first-child,.macro-table td:first-child{text-align:left;}
+  .macro-table th{font-family:'Oswald',sans-serif;font-size:10px;text-transform:uppercase;color:var(--text-3);}
+  .macro-table tr.active td{color:var(--accent);font-weight:600;}
+
+  .sched-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+  .sched-table th{font-family:'Oswald',sans-serif;font-size:9.5px;text-transform:uppercase;color:var(--text-3);text-align:left;padding:6px 3px;border-bottom:1px solid var(--border-strong);}
+  .sched-table td{padding:8px 3px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.4;}
+  .sched-table tr.today-row{background:rgba(232,184,62,.08);}
+  .sched-table .wday{font-weight:600;color:var(--text);white-space:nowrap;}
+  .sched-table .kcal-col{font-family:'JetBrains Mono',monospace;color:var(--text-2);white-space:nowrap;text-align:right;}
+
+  .week-tabs{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;}
+  .week-tab{flex-shrink:0;padding:8px 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-2);font-size:12px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.03em;}
+  .week-tab.active{background:var(--accent);border-color:var(--accent);color:#221a05;font-weight:600;}
+
+  .recipe-tabs{display:flex;gap:6px;margin-bottom:12px;}
+  .recipe-tab{flex:1;padding:9px;text-align:center;border-radius:9px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-2);font-size:12px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.03em;}
+  .recipe-tab.active{background:var(--accent);border-color:var(--accent);color:#221a05;font-weight:600;}
+
+  details.recipe-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;}
+  details.recipe-card[open]{border-color:var(--border-strong);}
+  .recipe-head{display:flex;justify-content:space-between;align-items:center;cursor:pointer;list-style:none;}
+  .recipe-head::-webkit-details-marker{display:none;}
+  .recipe-title{font-size:14.5px;font-weight:600;}
+  .recipe-kcal{font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:12.5px;white-space:nowrap;margin-left:10px;}
+  .ing-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px;}
+  .ing-table th,.ing-table td{padding:6px 4px;text-align:center;border-bottom:1px solid var(--border);}
+  .ing-table th:first-child,.ing-table td:first-child{text-align:left;}
+  .ing-table th{font-family:'Oswald',sans-serif;font-size:9.5px;text-transform:uppercase;color:var(--text-3);}
+  .ing-table td.active,.ing-table th.active{color:var(--accent);font-weight:600;}
+  .recipe-note{font-size:12.5px;color:var(--text-2);line-height:1.55;margin-top:10px;}
+  .recipe-warn{font-size:12px;color:var(--red);line-height:1.5;margin-top:8px;}
+
+  .snack-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .snack-table th{font-family:'Oswald',sans-serif;font-size:9.5px;text-transform:uppercase;color:var(--text-3);text-align:left;padding:6px 4px;border-bottom:1px solid var(--border-strong);}
+  .snack-table td{padding:8px 4px;border-bottom:1px solid var(--border);}
+
+  .section-title{margin:26px 0 10px;font-size:13px;}
+</style>
+</head>
+<body>
+
+<a class="back-link" href="index.html">‹ Inicio</a>
+<div class="top">
+  <span class="brand">Mi Dieta</span>
+  <span class="phase-badge phase-mant" id="phaseBadge">—</span>
+</div>
+
+<div class="diet-tags" id="dietTags"></div>
+
+<div class="card" id="todayCard">
+  <div class="today-head">
+    <span class="today-date" id="todayDate">—</span>
+    <span class="today-kcal" id="todayKcal">—</span>
+  </div>
+  <div id="todayMeals"><div class="meal-empty">Cargando…</div></div>
+</div>
+
+<div class="section-title"><h3>🎯 Macros objetivo</h3></div>
+<div class="card">
+  <table class="macro-table" id="macroTable"></table>
+</div>
+
+<div class="section-title"><h3>⏰ Horario diario</h3></div>
+<div class="card">
+  <table class="macro-table">
+    <tr><td>08:00-09:30</td><td>🌅 Despertar</td></tr>
+    <tr><td>09:30-11:00</td><td>🍳 Desayuno</td></tr>
+    <tr><td>~12:30</td><td>🍪 Snack si hambre</td></tr>
+    <tr><td>13:00-13:30</td><td>🍽️ Comida ⚡ pre-entreno</td></tr>
+    <tr><td>15:00-19:00</td><td>🏋️ Entreno</td></tr>
+    <tr><td>19:00-19:30</td><td>🍌 Snack post-entreno si hambre</td></tr>
+    <tr><td>21:00-22:00</td><td>🌙 Cena</td></tr>
+    <tr><td>Antes de dormir</td><td>🍦 Postre/snack si hambre</td></tr>
+  </table>
+</div>
+
+<div class="section-title"><h3>📅 Plan semanal</h3></div>
+<div class="week-tabs" id="weekTabs"></div>
+<div class="card">
+  <table class="sched-table" id="weekTable"></table>
+</div>
+
+<div class="section-title"><h3>📖 Recetario</h3></div>
+<div class="recipe-tabs" id="recipeTabs">
+  <div class="recipe-tab active" data-cat="D">🍳 Desayunos</div>
+  <div class="recipe-tab" data-cat="A">🍽️ Almuerzos</div>
+  <div class="recipe-tab" data-cat="C">🌙 Cenas</div>
+</div>
+<div id="recipeList"></div>
+
+<div class="section-title"><h3>🍪 Snacks y postres</h3></div>
+<div class="card">
+  <table class="snack-table">
+    <tr><th>Snack</th><th>Cuándo</th><th>Cantidad</th><th>~Kcal</th></tr>
+    <tr><td>Galletas Digestive / María</td><td>Media mañana</td><td>25g</td><td>~122</td></tr>
+    <tr><td>Frutos secos (cacahuetes/mix)</td><td>Post-entreno</td><td>20g</td><td>~113</td></tr>
+    <tr><td>Natillas Hacendado</td><td>Con la cena / noche</td><td>1-2 uds</td><td>~116-232</td></tr>
+    <tr><td>Helado (tarrina)</td><td>Capricho noche</td><td>100g</td><td>~200</td></tr>
+    <tr><td>Magdalena / bizcocho</td><td>Capricho</td><td>1 ud (~40g)</td><td>~160</td></tr>
+  </table>
+</div>
+
+<div class="setup" id="setupNote"></div>
+
+<script src="shared/drive-auth.js"></script>
+<script>
+// ---- Datos extraídos de la dieta personal (Obsidian: DIETA.md) ----
+
+const PHASES = { def: "Definición", mant: "Mantenimiento", vol: "Volumen" };
+
+const MACROS = {
+  def:  { kcal: 3062, p: 156, g: 70, c: 452 },
+  mant: { kcal: 3562, p: 156, g: 80, c: 560 },
+  vol:  { kcal: 3912, p: 156, g: 90, c: 640 },
+};
+
+// Rangos de fecha conocidos -> fase. Fuera de rango (antes/después) no hay
+// menú detallado, solo se muestran los objetivos de macros generales.
+const PHASE_RANGES = [
+  { start: "2026-07-08", end: "2026-07-12", phase: "vol" },
+  { start: "2026-07-13", end: "2026-08-09", phase: "mant" },
+];
+const AUTO_VOL_FROM = "2026-08-10"; // a partir de aquí el ciclo pasa solo a Volumen
+
+const RECIPES = {
+  D1: {
+    cat: "D", title: "D1 — Huevos cocidos + proteína + baguette 🥚",
+    ingredients: [
+      ["Huevos cocidos", "4 uds", "4 uds", "4 uds"],
+      ["Bacon / Pollo / Mortadela (según día)", "70g", "82g", "95g"],
+      ["Pan de barra / baguette", "100g", "125g", "150g"],
+    ],
+    totals: { def: [915,50,58,57], mant: [1035,56,62,71], vol: [1155,62,67,86] },
+    note: "Huevos a cocer 8-10 min desde que hierve el agua, enfriar en agua fría y pelar. En una sartén, bacon/pollo/mortadela a fuego medio. Come con la baguette. Huevos siempre cocidos, nunca fritos. Alterna proteína: Lunes=Bacon · Miércoles=Pollo plancha · Viernes=Mortadela · Domingo=Bacon.",
+  },
+  D3: {
+    cat: "D", title: "D3 — Arepas con pollo y alioli 🫓🍗",
+    ingredients: [
+      ["Harina de maíz PAN", "120g", "140g", "160g"],
+      ["Agua tibia", "~200ml", "~230ml", "~260ml"],
+      ["Sal", "al gusto", "al gusto", "al gusto"],
+      ["Aceite de girasol (pintar sartén)", "5ml", "5ml", "5ml"],
+      ["Pechuga de pollo (plancha, relleno)", "120g", "150g", "180g"],
+      ["Alioli Hacendado", "20g", "25g", "30g"],
+    ],
+    totals: { def: [810,48,18,108], mant: [970,58,22,128], vol: [1130,68,26,150] },
+    note: "Mezcla la harina PAN con agua tibia y sal hasta obtener una masa que no se pegue ni se rompa. Forma bolas y aplasta hasta ~1,5cm. Sartén antiadherente a fuego medio con un pelín de aceite, 5-6 min por lado hasta costra dorada. Abre por la mitad y rellena con el pollo troceado + alioli.",
+  },
+  D4: {
+    cat: "D", title: "D4 — Pancakes con leche 🥞",
+    ingredients: [
+      ["Preparado para pancakes (Mercadona)", "150g", "180g", "210g"],
+      ["Leche entera", "150ml", "180ml", "210ml"],
+      ["Huevos", "1 ud", "2 uds", "2 uds"],
+      ["Aceite de girasol (sartén)", "5ml", "5ml", "5ml"],
+      ["Miel o sirope de agave", "15g", "20g", "25g"],
+    ],
+    totals: { def: [680,22,14,115], mant: [870,30,20,142], vol: [1020,36,24,168] },
+    note: "Mezcla el preparado + leche + huevo batido hasta que no haya grumos. Sartén antiadherente a fuego medio-bajo con gotita de aceite. Vierte un cazo pequeño, espera burbujas (~2 min), voltea y 1 min más. Apila y echa miel o sirope por encima.",
+  },
+  A1: {
+    cat: "A", title: "A1 — Arroz con ajo y pimienta + Pollo plancha ⭐",
+    ingredients: [
+      ["Arroz blanco grano largo (crudo)", "190g", "220g", "260g"],
+      ["Pechuga de pollo", "200g", "220g", "240g"],
+      ["Aceite de oliva", "10ml", "12ml", "15ml"],
+      ["Ajo", "2 dientes", "2 dientes", "3 dientes"],
+      ["Pimienta negra + sal", "al gusto", "al gusto", "al gusto"],
+    ],
+    totals: { def: [1102,75,18,150], mant: [1272,84,22,174], vol: [1501,93,26,206] },
+    note: "Cuece el arroz. En sartén, aceite + ajo picado 30s, añade el arroz cocido y saltea 2-3 min con pimienta. Pollo a la plancha con sal y pimienta.",
+  },
+  A2: {
+    cat: "A", title: "A2 — Arroz al curry + Pollo (sin picante) 🟡",
+    ingredients: [
+      ["Arroz blanco grano largo (crudo)", "190g", "220g", "260g"],
+      ["Pechuga de pollo", "200g", "220g", "240g"],
+      ["Curry en polvo (sin picante)", "8g", "8g", "10g"],
+      ["Aceite de oliva", "10ml", "12ml", "15ml"],
+    ],
+    totals: { def: [1070,75,17,148], mant: [1238,84,21,172], vol: [1462,94,25,204] },
+    note: "Sofríe el curry en aceite 30s hasta que aromatice. Añade el arroz cocido y mezcla bien. Pollo a la plancha por separado. Sin salsa de tomate.",
+  },
+  A4: {
+    cat: "A", title: "A4 — Arroz con pollo al ajillo 🧄",
+    ingredients: [
+      ["Arroz blanco grano largo (crudo)", "190g", "220g", "260g"],
+      ["Pechuga de pollo (dados)", "200g", "220g", "240g"],
+      ["Aceite de oliva", "12ml", "15ml", "18ml"],
+      ["Ajo (laminados)", "3 dientes", "4 dientes", "4 dientes"],
+      ["Pimentón ahumado + pimienta + sal", "al gusto", "al gusto", "al gusto"],
+    ],
+    totals: { def: [1115,75,20,150], mant: [1290,84,25,174], vol: [1520,94,29,206] },
+    note: "Dora el ajo laminado en aceite a fuego bajo. Sube el fuego, añade el pollo en dados, pimentón, sal y pimienta. Saltea hasta dorar. Sirve sobre arroz blanco.",
+  },
+  A6: {
+    cat: "A", title: "A6 — Pasta con pollo al ajillo 🍝🧄",
+    ingredients: [
+      ["Pasta (cualquier tipo, cruda)", "160g", "200g", "240g"],
+      ["Pechuga de pollo (dados)", "200g", "220g", "240g"],
+      ["Aceite de oliva", "12ml", "12ml", "15ml"],
+      ["Ajo + pimienta + pimentón", "al gusto", "al gusto", "al gusto"],
+    ],
+    totals: { def: [985,76,16,123], mant: [1162,87,19,151], vol: [1368,97,22,180] },
+    note: "Pollo al ajillo (como A4) sobre la pasta al dente con un hilo de aceite crudo.",
+  },
+  A7: {
+    cat: "A", title: "A7 — Pollo empanado + Patatas fritas 🍗🍟",
+    ingredients: [
+      ["Pechuga de pollo (filetes finos)", "200g", "220g", "250g"],
+      ["Pan rallado", "25g", "30g", "35g"],
+      ["Huevo (para empanar)", "1 ud", "1 ud", "1 ud"],
+      ["Aceite de girasol (freír pollo)", "20ml", "25ml", "30ml"],
+      ["Patatas fritas congeladas (bolsa)", "250g", "300g", "350g"],
+      ["Aceite de girasol (freír patatas)", "30ml", "35ml", "40ml"],
+      ["Ketchup + alioli", "20g c/u", "25g c/u", "25g c/u"],
+    ],
+    totals: { def: [1050,65,55,75], mant: [1220,73,66,90], vol: [1415,82,77,106] },
+    note: "Pollo: pasa por huevo batido y pan rallado, fríe en abundante aceite caliente. Patatas congeladas: directas al aceite bien caliente sin descongelar, ~8-10 min.",
+    warn: "⚠️ Alta en grasa por la fritura. Ese día desayuno D3 o D4.",
+  },
+  A9: {
+    cat: "A", title: "A9 — Arroz con soja + Pollo estilo asiático 🍚🥢",
+    ingredients: [
+      ["Arroz blanco grano largo (crudo)", "180g", "220g", "250g"],
+      ["Pechuga de pollo (dados)", "200g", "220g", "240g"],
+      ["Salsa de soja", "15ml", "20ml", "25ml"],
+      ["Aceite de girasol", "10ml", "12ml", "15ml"],
+      ["Ajo + pimienta", "al gusto", "al gusto", "al gusto"],
+    ],
+    totals: { def: [985,74,16,128], mant: [1135,84,18,156], vol: [1310,92,22,182] },
+    note: "Saltea el pollo en dados a fuego fuerte con un poco de aceite hasta dorar. Añade el ajo picado 30s, vierte la soja y deja que glasee 1 min. Mezcla con el arroz cocido salteando todo junto a fuego alto (estilo wok).",
+  },
+  A11: {
+    cat: "A", title: "A11 — Pasta cremosa con bacon y pollo 🍝🥓🍗",
+    ingredients: [
+      ["Pasta (cualquier tipo, cruda)", "160g", "200g", "240g"],
+      ["Pechuga de pollo (dados)", "130g", "150g", "180g"],
+      ["Bacon (tiras)", "50g", "60g", "70g"],
+      ["Nata para cocinar Hacendado", "60ml", "80ml", "100ml"],
+      ["Aceite de oliva", "8ml", "10ml", "12ml"],
+      ["Ajo", "2 dientes", "2 dientes", "3 dientes"],
+      ["Pimienta negra + sal", "al gusto", "al gusto", "al gusto"],
+    ],
+    totals: { def: [1180,62,46,128], mant: [1353,69,54,155], vol: [1560,78,62,182] },
+    note: "Cuece la pasta al dente. Dora el bacon en tiras hasta que suelte grasa, retira. En esa grasa saltea el pollo con sal y pimienta hasta dorar. Baja el fuego, ajo picado 30s, vierte la nata y reduce 2 min. Devuelve el bacon, añade la pasta escurrida y mezcla con pimienta negra generosa. ~15 min.",
+  },
+  C1: {
+    cat: "C", title: "C1 — Ternera/Cerdo + Patatas fritas + Salsa ajo-mantequilla 🥩🍟",
+    ingredients: [
+      ["Ternera magra (bistec/filete)", "150g", "170g", "200g"],
+      ["Patatas fritas congeladas (bolsa)", "280g", "320g", "380g"],
+      ["Aceite de girasol (freír patatas)", "25ml", "30ml", "35ml"],
+      ["Mantequilla (salsa)", "10g", "12g", "15g"],
+      ["Ajo (salsa)", "2 dientes", "2 dientes", "3 dientes"],
+      ["Pan de barra", "80g", "100g", "120g"],
+      ["Natillas Hacendado", "1 ud", "1 ud", "1 ud"],
+    ],
+    totals: { def: [1110,52,48,106], mant: [1285,59,55,124], vol: [1498,68,63,148] },
+    note: "Patatas congeladas directo al aceite bien caliente, ~8-10 min. Salsa: derrite mantequilla a fuego bajo, añade ajo laminado 2 min hasta dorar, vierte sobre la carne.",
+  },
+  C2: {
+    cat: "C", title: "C2 — Pasta con carne seca al ajillo 🍝",
+    ingredients: [
+      ["Pasta (cruda)", "150g", "180g", "220g"],
+      ["Ternera picada 99%", "160g", "180g", "200g"],
+      ["Aceite de oliva", "10ml", "12ml", "14ml"],
+      ["Ajo + orégano + pimentón", "al gusto", "al gusto", "al gusto"],
+      ["Natillas Hacendado", "1 ud", "1 ud", "1 ud"],
+    ],
+    totals: { def: [968,62,16,114], mant: [1128,71,19,141], vol: [1322,82,23,173] },
+    note: "Dora la ternera con ajo y aceite a fuego fuerte hasta que quede bien seca y con costra. Pimentón + orégano al final. Mezcla con pasta al dente y un hilo de aceite crudo.",
+  },
+  C3: {
+    cat: "C", title: "C3 — Pollo plancha + Arroz con ajo 🍚",
+    ingredients: [
+      ["Pechuga de pollo", "180g", "200g", "230g"],
+      ["Arroz blanco grano largo (crudo)", "180g", "210g", "250g"],
+      ["Aceite de oliva", "10ml", "12ml", "15ml"],
+      ["Ajo + pimienta", "al gusto", "al gusto", "al gusto"],
+    ],
+    totals: { def: [1033,67,17,142], mant: [1192,76,22,166], vol: [1413,87,27,198] },
+    note: "Pollo a la plancha con sal y pimienta. Arroz salteado con ajo y aceite.",
+  },
+  C4: {
+    cat: "C", title: "C4 — Bacon + 4 Huevos cocidos + Pan 🥓🥚",
+    ingredients: [
+      ["Bacon (tiras)", "95g", "108g", "120g"],
+      ["Huevos cocidos", "3 uds", "4 uds", "4 uds"],
+      ["Pan de barra", "110g", "122g", "142g"],
+      ["Natillas Hacendado", "2 uds", "1 ud", "1 ud"],
+    ],
+    totals: { def: [1070,52,57,92], mant: [1100,59,61,102], vol: [1195,64,65,118] },
+    note: "Huevos cocidos en vez de fritos — se sube el bacon y el pan un poco para no perder calorías/grasas al quitar la fritura.",
+    warn: "⚠️ Alta en grasa. Almuerzo ese día: A1, A2, A4 o A6. Desayuno: D1 o D3.",
+  },
+  C6: {
+    cat: "C", title: "C6 — Hamburguesa casera + Patatas fritas 🍔🍟",
+    ingredients: [
+      ["Ternera picada 99%", "160g", "180g", "200g"],
+      ["Pan de barra / baguette", "100g", "100g", "120g"],
+      ["Patatas fritas congeladas (bolsa)", "250g", "300g", "350g"],
+      ["Aceite de girasol (freír patatas)", "25ml", "30ml", "35ml"],
+      ["Ketchup", "20g", "20g", "25g"],
+      ["Mayonesa", "15g", "15g", "20g"],
+    ],
+    totals: { def: [1220,49,50,91], mant: [1375,56,58,109], vol: [1580,63,68,127] },
+    note: "Forma la hamburguesa, sal+pimienta, sartén a fuego alto 3-4 min por lado. Patatas congeladas directo al aceite bien caliente.",
+    warn: "⚠️ Alta en calorías y grasa. Ese día: D3 o D4 + A1/A2/A4/A6/A9 en almuerzo.",
+  },
+  C8: {
+    cat: "C", title: "C8 — Pollo al curry + Arroz 🍛🍚",
+    ingredients: [
+      ["Arroz blanco grano largo (crudo)", "160g", "180g", "210g"],
+      ["Pechuga de pollo (dados)", "200g", "220g", "240g"],
+      ["Curry en polvo (sin picante)", "8g", "8g", "10g"],
+      ["Nata para cocinar Hacendado", "40ml", "50ml", "60ml"],
+      ["Aceite de oliva", "8ml", "10ml", "12ml"],
+    ],
+    totals: { def: [960,53,18,128], mant: [1053,56,20,142], vol: [1210,62,24,166] },
+    note: "Saltea el pollo hasta dorar. Baja el fuego, añade el curry en el aceite 30s, vierte la nata y reduce 2-3 min hasta salsa espesa. Sirve sobre arroz blanco. Sin picante, sin tomate.",
+  },
+};
+
+// [fecha ISO, desayuno, almuerzo, cena, snack "emoji kcal", kcal total del día]
+const SCHEDULE = [
+  // Semana 1 · 13-19 jul
+  ["2026-07-13","D1","A1","C1","🍪 122",3709],
+  ["2026-07-14","D3","A2","C2","🍪 122",3458],
+  ["2026-07-15","D1","A4","C3","🍪 122",3634],
+  ["2026-07-16","D3","A6","C4","🥜 113",3346],
+  ["2026-07-17","D1","A9","C6","🥜 113",3653],
+  ["2026-07-18","D3","A7","C8","🍪 122",3365],
+  ["2026-07-19","D1","A11","C1","🥜 113",3781],
+  // Semana 2 · 20-26 jul
+  ["2026-07-20","D1","A2","C3","🍪 122",3582],
+  ["2026-07-21","D3","A1","C1","🍪 122",3649],
+  ["2026-07-22","D1","A6","C2","🍪 122",3442],
+  ["2026-07-23","D3","A4","C8","🥜 113",3426],
+  ["2026-07-24","D1","A9","C4","🥜 113",3379],
+  ["2026-07-25","D3","A7","C6","🍪 122",3687],
+  ["2026-07-26","D1","A11","C3","🥜 113",3688],
+  // Semana 3 · 27 jul - 2 ago
+  ["2026-07-27","D1","A1","C6","🍪 122",3799],
+  ["2026-07-28","D3","A9","C3","🍪 122",3419],
+  ["2026-07-29","D1","A2","C8","🍪 122",3443],
+  ["2026-07-30","D3","A4","C2","🥜 113",3501],
+  ["2026-07-31","D1","A1","C1","🥜 113",3700],
+  ["2026-08-01","D3","A7","C4","🍪 122",3413],
+  ["2026-08-02","D1","A6","C1","🥜 113",3590],
+  // Semana 4 · 3-9 ago
+  ["2026-08-03","D1","A11","C2","🍪 122",3633],
+  ["2026-08-04","D3","A1","C8","🍪 122",3417],
+  ["2026-08-05","D1","A9","C1","🍪 122",3572],
+  ["2026-08-06","D3","A2","C6","🥜 113",3696],
+  ["2026-08-07","D1","A4","C3","🥜 113",3625],
+  ["2026-08-08","D3","A7","C4","🍪 122",3413],
+  ["2026-08-09","D1","A6","C8","🥜 113",3358],
+];
+
+// ---- Helpers ----
+
+function phaseForDate(iso){
+  for(const r of PHASE_RANGES){ if(iso >= r.start && iso <= r.end) return r.phase; }
+  if(iso >= AUTO_VOL_FROM) return "vol";
+  return "vol"; // antes del 8 jul, por defecto la fase base del ciclo es Volumen
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
-body{
-  font-family:'Inter',sans-serif;
-  padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 32px);
-  max-width:520px;margin:0 auto;
-  -webkit-font-smoothing:antialiased;
+
+function fmtDia(iso){
+  const dias=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+  const meses=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  const [y,m,d]=iso.split("-").map(Number);
+  const dt=new Date(y,m-1,d);
+  return `${dias[dt.getDay()]} ${d} ${meses[m-1]}`;
 }
-h1,h2,h3{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.03em;margin:0;}
-a{color:inherit;text-decoration:none;}
 
-.top{display:flex;align-items:center;justify-content:space-between;padding:20px 0 16px;}
-.top .brand{font-family:'Oswald',sans-serif;font-size:15px;letter-spacing:.12em;color:var(--text-2);}
-.status-dot{width:8px;height:8px;border-radius:50%;background:var(--red);}
-.status-dot.ok{background:var(--green);}
-.status-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);font-family:'JetBrains Mono',monospace;}
-
-.back-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);font-family:'JetBrains Mono',monospace;margin-bottom:8px;}
-
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
-.cat-label{font-size:11px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;font-weight:600;margin:4px 0 10px;font-family:'Oswald',sans-serif;}
-
-label.field-label{display:block;font-size:11px;letter-spacing:.06em;color:var(--text-2);text-transform:uppercase;margin-bottom:8px;font-family:'Oswald',sans-serif;}
-.slider-row{display:flex;align-items:center;gap:12px;}
-input[type="range"]{-webkit-appearance:none;flex:1;height:4px;background:var(--border-strong);border-radius:2px;}
-input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);}
-.slider-val{font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--accent);min-width:28px;text-align:right;font-weight:600;}
-
-input[type="text"],input[type="number"],textarea,select{
-  width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;
-  color:var(--text);font-size:15px;padding:10px 12px;font-family:'Inter',sans-serif;
+function ingRow(row, phaseKey){
+  const idx = phaseKey==="def"?1:phaseKey==="mant"?2:3;
+  return row.map((cell,i)=> i===0 ? cell : (i===idx ? `<span class="active">${cell}</span>` : cell)).join("|SEP|");
 }
-input[type="number"]{font-family:'JetBrains Mono',monospace;text-align:center;}
-textarea{resize:vertical;min-height:64px;}
-input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);}
 
-.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-.field-row:last-child{margin-bottom:0;}
-
-.btn{
-  width:100%;padding:15px;border-radius:12px;border:1px solid var(--border-strong);
-  background:var(--surface-2);color:var(--text);font-size:14px;font-weight:600;
-  font-family:'Oswald',sans-serif;letter-spacing:.05em;text-transform:uppercase;
+function renderPhaseBadge(phase){
+  const el = document.getElementById("phaseBadge");
+  el.textContent = PHASES[phase];
+  el.className = "phase-badge phase-" + phase;
 }
-.btn:active{transform:scale(.98);}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#221a05;}
-.btn.primary:disabled{background:var(--surface-2);border-color:var(--border);color:var(--text-3);}
-.btn-row{display:flex;flex-direction:column;gap:10px;margin-top:18px;}
 
-.toast{
-  position:fixed;left:16px;right:16px;bottom:24px;max-width:488px;margin:0 auto;
-  background:var(--surface-2);border:1px solid var(--border-strong);border-radius:12px;
-  padding:13px 16px;font-size:13px;text-align:center;opacity:0;transition:opacity .25s;pointer-events:none;
+function renderMacroTable(activePhase){
+  const t = document.getElementById("macroTable");
+  let html = "<tr><th>Fase</th><th>Kcal/día</th><th>Proteína</th><th>Grasas</th><th>Carbos</th></tr>";
+  for(const key of ["def","mant","vol"]){
+    const m = MACROS[key];
+    html += `<tr class="${key===activePhase?'active':''}"><td>${PHASES[key]}</td><td>${m.kcal}</td><td>${m.p}g</td><td>${m.g}g</td><td>${m.c}g</td></tr>`;
+  }
+  t.innerHTML = html;
 }
-.toast.show{opacity:1;}
-.toast.ok{border-color:var(--green);color:var(--green);}
-.toast.err{border-color:var(--red);color:var(--red);}
 
-.setup{font-size:12px;color:var(--text-3);text-align:center;margin-top:14px;line-height:1.6;}
+function renderToday(){
+  const todayISO = fechaISO();
+  const day = SCHEDULE.find(r => r[0] === todayISO);
+  document.getElementById("todayDate").textContent = fechaLarga();
 
-/* Página principal (hub) */
-.hub-title{text-align:center;margin:28px 0 6px;}
-.hub-sub{text-align:center;color:var(--text-3);font-size:13px;margin-bottom:28px;font-family:'JetBrains Mono',monospace;}
-.hub-card{
-  display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:18px;margin-bottom:12px;
+  if(!day){
+    document.getElementById("todayKcal").textContent = "—";
+    document.getElementById("todayMeals").innerHTML =
+      '<div class="meal-empty">No hay menú detallado para hoy en el plan (fuera del rango 13 jul – 9 ago). Consulta los objetivos de macros más abajo.</div>';
+    return;
+  }
+
+  const phase = phaseForDate(todayISO);
+  const [, dKey, aKey, cKey, snack, kcal] = day;
+  document.getElementById("todayKcal").textContent = "~" + kcal.toLocaleString("es-ES") + " kcal";
+
+  const meals = [
+    ["Desayuno", RECIPES[dKey]],
+    ["Almuerzo · pre-entreno", RECIPES[aKey]],
+    ["Cena", RECIPES[cKey]],
+  ];
+  const idx = phase==="def"?0:phase==="mant"?1:2;
+  let html = meals.map(([label, r]) => `
+    <div class="meal-row">
+      <div class="meal-top">
+        <div>
+          <div class="meal-label">${label}</div>
+          <div class="meal-name">${r.title}</div>
+        </div>
+        <div class="meal-kcal">~${r.totals[phase][0]} kcal</div>
+      </div>
+    </div>`).join("");
+  html += `<div class="meal-row"><div class="meal-top"><div><div class="meal-label">Snack</div><div class="meal-name">${snack.split(" ")[0]==="🍪"?"Galletas":"Frutos secos"}</div></div><div class="meal-kcal">${snack.split(" ").slice(1).join(" ")} kcal</div></div></div>`;
+  document.getElementById("todayMeals").innerHTML = html;
 }
-.hub-card:active{transform:scale(.98);}
-.hub-icon{font-size:28px;width:44px;text-align:center;flex-shrink:0;}
-.hub-card-title{font-family:'Oswald',sans-serif;font-size:16px;text-transform:uppercase;letter-spacing:.03em;}
-.hub-card-sub{font-size:12px;color:var(--text-3);margin-top:2px;}
-.hub-card-arrow{margin-left:auto;color:var(--text-3);font-size:18px;}
+
+function renderWeekTabs(){
+  const tabs = document.getElementById("weekTabs");
+  const todayISO = fechaISO();
+  let currentWeek = 0;
+  for(let w=0; w<4; w++){
+    if(todayISO >= SCHEDULE[w*7][0] && todayISO <= SCHEDULE[w*7+6][0]) currentWeek = w;
+  }
+  tabs.innerHTML = [0,1,2,3].map(w => `<div class="week-tab${w===currentWeek?' active':''}" data-week="${w}">Semana ${w+1}</div>`).join("");
+  tabs.querySelectorAll(".week-tab").forEach(tab => {
+    tab.onclick = () => {
+      tabs.querySelectorAll(".week-tab").forEach(t=>t.classList.remove("active"));
+      tab.classList.add("active");
+      renderWeekTable(Number(tab.dataset.week));
+    };
+  });
+  renderWeekTable(currentWeek);
+}
+
+function renderWeekTable(week){
+  const todayISO = fechaISO();
+  const rows = SCHEDULE.slice(week*7, week*7+7);
+  let html = "<tr><th>Día</th><th>Desayuno</th><th>Almuerzo</th><th>Cena</th><th>Kcal</th></tr>";
+  for(const [iso,d,a,c,snack,kcal] of rows){
+    html += `<tr class="${iso===todayISO?'today-row':''}">
+      <td class="wday">${fmtDia(iso)}</td>
+      <td>${RECIPES[d].title.split(" — ")[0]}</td>
+      <td>${RECIPES[a].title.split(" — ")[0]}</td>
+      <td>${RECIPES[c].title.split(" — ")[0]}</td>
+      <td class="kcal-col">${kcal.toLocaleString("es-ES")}</td>
+    </tr>`;
+  }
+  document.getElementById("weekTable").innerHTML = html;
+}
+
+function renderRecipes(cat){
+  const list = document.getElementById("recipeList");
+  const phase = phaseForDate(fechaISO());
+  const items = Object.values(RECIPES).filter(r => r.cat === cat);
+  list.innerHTML = items.map(r => {
+    const idx = phase==="def"?1:phase==="mant"?2:3;
+    const ingRows = r.ingredients.map(row =>
+      `<tr>${row.map((cell,i)=>`<td class="${i===idx?'active':''}">${cell}</td>`).join("")}</tr>`
+    ).join("");
+    const [kD,pD,gD,cD] = r.totals.def, [kM,pM,gM,cM] = r.totals.mant, [kV,pV,gV,cV] = r.totals.vol;
+    return `
+    <details class="recipe-card">
+      <summary class="recipe-head">
+        <span class="recipe-title">${r.title}</span>
+        <span class="recipe-kcal">~${r.totals[phase][0]} kcal</span>
+      </summary>
+      <table class="ing-table">
+        <tr><th>Ingrediente</th><th class="${idx===1?'active':''}">Definición</th><th class="${idx===2?'active':''}">Mantenimiento</th><th class="${idx===3?'active':''}">Volumen</th></tr>
+        ${ingRows}
+        <tr><td><strong>TOTAL</strong></td>
+          <td class="${idx===1?'active':''}">${kD}kcal · P${pD} G${gD} C${cD}</td>
+          <td class="${idx===2?'active':''}">${kM}kcal · P${pM} G${gM} C${cM}</td>
+          <td class="${idx===3?'active':''}">${kV}kcal · P${pV} G${gV} C${cV}</td>
+        </tr>
+      </table>
+      <div class="recipe-note">📌 ${r.note}</div>
+      ${r.warn ? `<div class="recipe-warn">${r.warn}</div>` : ""}
+    </details>`;
+  }).join("");
+}
+
+document.getElementById("recipeTabs").querySelectorAll(".recipe-tab").forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll(".recipe-tab").forEach(t=>t.classList.remove("active"));
+    tab.classList.add("active");
+    renderRecipes(tab.dataset.cat);
+  };
+});
+
+const todayPhase = phaseForDate(fechaISO());
+renderPhaseBadge(todayPhase);
+renderMacroTable(todayPhase);
+renderToday();
+renderWeekTabs();
+renderRecipes("D");
+
+document.getElementById("dietTags").textContent =
+  "Sin: pescado · verdura · legumbres · queso · manzana/pera en desayuno · salsa de tomate";
+</script>
+</body>
+</html>
